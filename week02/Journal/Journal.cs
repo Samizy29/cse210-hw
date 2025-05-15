@@ -4,68 +4,58 @@ using System.IO;
 
 public class Journal
 {
-    private List<JournalEntry> entries = new List<JournalEntry>();
-    private List<string> prompts = new List<string>
-    {
-        "Who was the most interesting person you interacted with today?",
-        "What was the best part of your day?",
-        "How did you see the hand of the Lord in your life today?",
-        "What was the strongest emotion you felt today?",
-        "If you had one thing you could do over today, what would it be?"
-    };
+    private List<Entry> _entries = new List<Entry>();
 
-    public void AddEntry()
+    public void AddEntry(Entry entry)
     {
-        Random rand = new Random();
-        string prompt = prompts[rand.Next(prompts.Count)];
-        Console.WriteLine($"Prompt: {prompt}");
-        Console.Write("Your response: ");
-        string response = Console.ReadLine();
-        Console.Write("How are you feeling today? (Your mood): ");
-        string mood = Console.ReadLine();
-        string date = DateTime.Now.ToShortDateString();
-
-        JournalEntry entry = new JournalEntry(date, prompt, response, mood);
-        entries.Add(entry);
+        _entries.Add(entry);
     }
 
-    public void DisplayEntries()
+    public void Display()
     {
-        foreach (var entry in entries)
+        if (_entries.Count == 0)
         {
-            entry.DisplayEntry();
+            Console.WriteLine("No journal entries found.");
+            return;
+        }
+
+        foreach (Entry entry in _entries)
+        {
+            Console.WriteLine(entry.ToString());
         }
     }
 
-    public void SaveToFile(string filename)
+    public void Save(string filename)
     {
         using (StreamWriter writer = new StreamWriter(filename))
         {
-            foreach (var entry in entries)
+            foreach (Entry entry in _entries)
             {
-                writer.WriteLine(entry.Date);
-                writer.WriteLine(entry.Mood);
-                writer.WriteLine(entry.Prompt);
-                writer.WriteLine(entry.Response);
+                writer.WriteLine(entry.ToSaveString());
             }
         }
-        Console.WriteLine("Journal saved successfully.");
+        Console.WriteLine($"Journal saved to {filename}");
     }
 
-    public void LoadFromFile(string filename)
+    public void Load(string filename)
     {
-        entries.Clear();
-        string[] lines = File.ReadAllLines(filename);
-        for (int i = 0; i < lines.Length; i += 4)
+        if (!File.Exists(filename))
         {
-            string date = lines[i];
-            string mood = lines[i + 1];
-            string prompt = lines[i + 2];
-            string response = lines[i + 3];
-
-            JournalEntry entry = new JournalEntry(date, prompt, response, mood);
-            entries.Add(entry);
+            Console.WriteLine($"File {filename} does not exist.");
+            return;
         }
-        Console.WriteLine("Journal loaded successfully.");
+
+        _entries.Clear();
+        string[] lines = File.ReadAllLines(filename);
+
+        foreach (string line in lines)
+        {
+            Entry entry = Entry.FromSaveString(line);
+            if (entry != null)
+            {
+                _entries.Add(entry);
+            }
+        }
+        Console.WriteLine($"Journal loaded from {filename}");
     }
 }
